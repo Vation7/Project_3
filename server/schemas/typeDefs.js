@@ -1,9 +1,10 @@
-const typeDefs = `
+const { gql } = require('apollo-server-express');
+
+const typeDefs = gql`
   type User {
     _id: ID
     username: String
     email: String
-    password: String
     thoughts: [Thought]!
   }
 
@@ -22,6 +23,15 @@ const typeDefs = `
     createdAt: String
   }
 
+  type Forum {
+    _id: ID
+    title: String
+    description: String
+    createdAt: String
+    createdBy: User
+    posts: [Post]
+  }
+
   type Auth {
     token: ID!
     user: User
@@ -33,6 +43,9 @@ const typeDefs = `
     thoughts(username: String): [Thought]
     thought(thoughtId: ID!): Thought
     me: User
+
+    forums: [Forum]
+    forum(forumId: ID!): Forum
   }
 
   type Mutation {
@@ -42,6 +55,9 @@ const typeDefs = `
     addComment(thoughtId: ID!, commentText: String!): Thought
     removeThought(thoughtId: ID!): Thought
     removeComment(thoughtId: ID!, commentId: ID!): Thought
+
+    createForum(title: String!, description: String): Forum
+    # Add more mutations for updating, deleting forums, etc. as needed.
   }
 `;
 
