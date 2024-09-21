@@ -1,20 +1,21 @@
 import { Link } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
 import { LIKE_THOUGHT } from '../../utils/mutations';
-import { QUERY_THOUGHTS } from '../../utils/queries'; // Import the query
+import { QUERY_THOUGHTS } from '../../utils/queries';
 
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true }) => {
-  const [likeThought] = useMutation(LIKE_THOUGHT, {
-    refetchQueries: [{ query: QUERY_THOUGHTS }], // Refetch the thoughts query after mutation
+  const [likeThought, { error }] = useMutation(LIKE_THOUGHT, {
+    refetchQueries: [{ query: QUERY_THOUGHTS }],
   });
 
   const handleLike = async (thoughtId) => {
     try {
-      await likeThought({
+      const response = await likeThought({
         variables: { thoughtId },
       });
+      console.log('Like Mutation Response:', response); // Log success
     } catch (err) {
-      console.error(err);
+      console.error('Error liking thought:', err); // Log error
     }
   };
 
@@ -57,8 +58,9 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true })
               className="btn btn-secondary mt-2"
               onClick={() => handleLike(thought._id)}
             >
-              Like ({thought.likes?.length || 0}) {/* Safely check likes */}
+              Like ({thought.likes?.length || 0})
             </button>
+            {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
           </div>
         ))}
     </div>
