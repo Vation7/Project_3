@@ -14,7 +14,9 @@ const SingleThought = () => {
     variables: { thoughtId: thoughtId },
   });
 
-  const [likeThought] = useMutation(LIKE_THOUGHT);
+  const [likeThought] = useMutation(LIKE_THOUGHT, {
+    refetchQueries: [{ query: QUERY_SINGLE_THOUGHT, variables: { thoughtId } }],
+  });
 
   const thought = data?.thought || {};
 

@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
 import { LIKE_THOUGHT } from '../../utils/mutations';
+import { QUERY_THOUGHTS } from '../../utils/queries'; // Import the query
 
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true }) => {
-  const [likeThought] = useMutation(LIKE_THOUGHT);
+  const [likeThought] = useMutation(LIKE_THOUGHT, {
+    refetchQueries: [{ query: QUERY_THOUGHTS }], // Refetch the thoughts query after mutation
+  });
 
   const handleLike = async (thoughtId) => {
     try {

@@ -25,6 +25,31 @@ const resolvers = {
   },
 
   Mutation: {
+    likeThought: async (parent, { thoughtId }, context) => {
+      if (context.user) {
+        const thought = await Thought.findOne({ _id: thoughtId });
+    
+        // Check if the user already liked the thought
+        const liked = thought.likes.includes(context.user._id);
+    
+        if (liked) {
+          // If the user has already liked the thought, remove the like (unlike)
+          return Thought.findOneAndUpdate(
+            { _id: thoughtId },
+            { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
+            { new: true }
+          );
+        } else {
+          // If the user hasn't liked the thought yet, add the like
+          return Thought.findOneAndUpdate(
+            { _id: thoughtId },
+            { $addToSet: { likes: context.user._id } }, // Add the user's ID to the likes array
+            { new: true }
+          );
+        }
+      }
+      throw AuthenticationError;
+    },
     addUser: async (parent, { username, email, password }) => {
       const user = await User.create({ username, email, password });
       const token = signToken(user);
