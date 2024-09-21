@@ -55,7 +55,7 @@ const SingleThought = () => {
       </div>
 
       <button className="btn btn-secondary" onClick={handleLike}>
-        Like ({thought.likes.length})
+        Like ({thought.likes?.length || 0}) {/* Safely check likes */}
       </button>
 
       <div className="my-5">

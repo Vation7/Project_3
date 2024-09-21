@@ -54,7 +54,7 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true })
               className="btn btn-secondary mt-2"
               onClick={() => handleLike(thought._id)}
             >
-              Like ({thought.likes.length})
+              Like ({thought.likes?.length || 0}) {/* Safely check likes */}
             </button>
           </div>
         ))}
