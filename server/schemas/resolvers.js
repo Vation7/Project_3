@@ -28,12 +28,12 @@ const resolvers = {
     likeThought: async (parent, { thoughtId }, context) => {
       if (context.user) {
         const thought = await Thought.findOne({ _id: thoughtId });
-    
+
         // Check if the user has already liked the thought
-        const liked = thought.likes.includes(context.user._id);
-    
+        const liked = thought.likes.some((like) => like.toString() === context.user._id.toString());
+
         if (liked) {
-          // If the user has already liked the thought, remove the like
+          // If the user has already liked the thought, remove the like (dislike)
           return Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
@@ -59,13 +59,13 @@ const resolvers = {
       const user = await User.findOne({ email });
 
       if (!user) {
-        throw AuthenticationError;
+        throw new AuthenticationError('No user found with this email address');
       }
 
       const correctPw = await user.isCorrectPassword(password);
 
       if (!correctPw) {
-        throw AuthenticationError;
+        throw new AuthenticationError('Incorrect credentials');
       }
 
       const token = signToken(user);
@@ -86,7 +86,7 @@ const resolvers = {
 
         return thought;
       }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in to add a thought!');
     },
     addComment: async (parent, { thoughtId, commentText }, context) => {
       if (context.user) {
@@ -103,17 +103,7 @@ const resolvers = {
           }
         );
       }
-      throw AuthenticationError;
-    },
-    likeThought: async (parent, { thoughtId }, context) => {
-      if (context.user) {
-        return Thought.findOneAndUpdate(
-          { _id: thoughtId },
-          { $addToSet: { likes: context.user._id } }, // Add user to the likes array
-          { new: true }
-        );
-      }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in to add a comment!');
     },
     removeThought: async (parent, { thoughtId }, context) => {
       if (context.user) {
@@ -129,7 +119,7 @@ const resolvers = {
 
         return thought;
       }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in to remove a thought!');
     },
     removeComment: async (parent, { thoughtId, commentId }, context) => {
       if (context.user) {
@@ -146,7 +136,7 @@ const resolvers = {
           { new: true }
         );
       }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in to remove a comment!');
     },
   },
 };

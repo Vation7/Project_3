@@ -19,7 +19,7 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, u
       });
       const updatedThought = response.data.likeThought;
 
-      // Update the thought in local state with new like data
+      // Update the thought in local state with new like/unlike data
       setThoughtsState((prevThoughts) =>
         prevThoughts.map((thought) =>
           thought._id === thoughtId ? { ...thought, likes: updatedThought.likes } : thought
