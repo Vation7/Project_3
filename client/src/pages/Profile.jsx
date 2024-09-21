@@ -1,21 +1,22 @@
 import { Navigate, useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
-
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
-
+import { ADD_FRIEND } from '../utils/mutations';
 import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
+  const [addFriend] = useMutation(ADD_FRIEND);
 
   const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
   const user = data?.me || data?.user || {};
+  
   // navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
@@ -34,12 +35,39 @@ const Profile = () => {
     );
   }
 
+  const handleAddFriend = async () => {
+    try {
+      await addFriend({
+        variables: { friendId: user._id },
+      });
+      console.log('Friend added!');
+    } catch (err) {
+      console.error('Error adding friend:', err);
+    }
+  };
+
+  const isFriend = user.friends?.some((friend) => friend._id === Auth.getProfile().data._id);
+
   return (
     <div>
       <div className="flex-row justify-center mb-3">
         <h2 className="col-12 col-md-10 bg-dark text-light p-3 mb-5">
           Viewing {userParam ? `${user.username}'s` : 'your'} profile.
         </h2>
+
+        {userParam && (
+          <div className="col-12 col-md-10 mb-5">
+            {isFriend ? (
+              <button className="btn btn-success" disabled>
+                Friend Added
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={handleAddFriend}>
+                Add Friend
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="col-12 col-md-10 mb-5">
           <ThoughtList
@@ -57,6 +85,15 @@ const Profile = () => {
             <ThoughtForm />
           </div>
         )}
+      </div>
+
+      <div className="col-12 col-md-10">
+        <h3>Friends List</h3>
+        <ul>
+          {user.friends?.map((friend) => (
+            <li key={friend._id}>{friend.username}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

@@ -4,10 +4,10 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 const resolvers = {
   Query: {
     users: async () => {
-      return User.find().populate('thoughts');
+      return User.find().populate('thoughts friends');
     },
     user: async (parent, { username }) => {
-      return User.findOne({ username }).populate('thoughts');
+      return User.findOne({ username }).populate('thoughts friends');
     },
     thoughts: async (parent, { username }) => {
       const params = username ? { username } : {};
@@ -18,9 +18,9 @@ const resolvers = {
     },
     me: async (parent, args, context) => {
       if (context.user) {
-        return User.findOne({ _id: context.user._id }).populate('thoughts');
+        return User.findOne({ _id: context.user._id }).populate('thoughts friends');
       }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in.');
     },
   },
 
@@ -30,17 +30,15 @@ const resolvers = {
         const thought = await Thought.findOne({ _id: thoughtId });
 
         // Check if the user has already liked the thought
-        const liked = thought.likes.some((like) => like.toString() === context.user._id.toString());
+        const liked = thought.likes.includes(context.user._id);
 
         if (liked) {
-          // If the user has already liked the thought, remove the like (dislike)
           return Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
             { new: true }
           );
         } else {
-          // If the user hasn't liked the thought yet, add the like
           return Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $addToSet: { likes: context.user._id } }, // Add the user's ID to the likes array
@@ -50,11 +48,13 @@ const resolvers = {
       }
       throw new AuthenticationError('You need to be logged in.');
     },
+
     addUser: async (parent, { username, email, password }) => {
       const user = await User.create({ username, email, password });
       const token = signToken(user);
       return { token, user };
     },
+
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
 
@@ -72,6 +72,7 @@ const resolvers = {
 
       return { token, user };
     },
+
     addThought: async (parent, { thoughtText }, context) => {
       if (context.user) {
         const thought = await Thought.create({
@@ -86,8 +87,9 @@ const resolvers = {
 
         return thought;
       }
-      throw new AuthenticationError('You need to be logged in to add a thought!');
+      throw new AuthenticationError('You need to be logged in.');
     },
+
     addComment: async (parent, { thoughtId, commentText }, context) => {
       if (context.user) {
         return Thought.findOneAndUpdate(
@@ -103,8 +105,20 @@ const resolvers = {
           }
         );
       }
-      throw new AuthenticationError('You need to be logged in to add a comment!');
+      throw new AuthenticationError('You need to be logged in.');
     },
+
+    addFriend: async (parent, { friendId }, context) => {
+      if (context.user) {
+        return User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $addToSet: { friends: friendId } }, // Add the friend
+          { new: true }
+        ).populate('friends');
+      }
+      throw new AuthenticationError('You need to be logged in to add a friend.');
+    },
+
     removeThought: async (parent, { thoughtId }, context) => {
       if (context.user) {
         const thought = await Thought.findOneAndDelete({
@@ -119,8 +133,9 @@ const resolvers = {
 
         return thought;
       }
-      throw new AuthenticationError('You need to be logged in to remove a thought!');
+      throw new AuthenticationError('You need to be logged in to remove a thought.');
     },
+
     removeComment: async (parent, { thoughtId, commentId }, context) => {
       if (context.user) {
         return Thought.findOneAndUpdate(
@@ -136,7 +151,7 @@ const resolvers = {
           { new: true }
         );
       }
-      throw new AuthenticationError('You need to be logged in to remove a comment!');
+      throw new AuthenticationError('You need to be logged in to remove a comment.');
     },
   },
 };

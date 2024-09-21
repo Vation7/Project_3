@@ -5,6 +5,7 @@ const typeDefs = `
     email: String
     password: String
     thoughts: [Thought]!
+    friends: [User] # Friends list added
   }
 
   type Thought {
@@ -13,7 +14,7 @@ const typeDefs = `
     thoughtAuthor: String
     createdAt: String
     comments: [Comment]!
-    likes: [User] # Field to track users who liked a thought
+    likes: [User] # Track users who liked a thought
   }
 
   type Comment {
@@ -43,7 +44,8 @@ const typeDefs = `
     addComment(thoughtId: ID!, commentText: String!): Thought
     removeThought(thoughtId: ID!): Thought
     removeComment(thoughtId: ID!, commentId: ID!): Thought
-    likeThought(thoughtId: ID!): Thought # Mutation for liking or unliking a thought
+    likeThought(thoughtId: ID!): Thought
+    addFriend(friendId: ID!): User # New mutation to add a friend
   }
 `;
 
