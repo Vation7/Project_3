@@ -12,19 +12,6 @@ export const LOGIN_USER = gql`
   }
 `;
 
-export const LIKE_THOUGHT = gql`
-  mutation likeThought($thoughtId: ID!) {
-    likeThought(thoughtId: $thoughtId) {
-      _id
-      thoughtText
-      likes {
-        _id
-        username
-      }
-    }
-  }
-`;
-
 export const ADD_USER = gql`
   mutation addUser($username: String!, $email: String!, $password: String!) {
     addUser(username: $username, email: $email, password: $password) {
@@ -47,6 +34,7 @@ export const ADD_THOUGHT = gql`
       comments {
         _id
         commentText
+        createdAt
       }
     }
   }
