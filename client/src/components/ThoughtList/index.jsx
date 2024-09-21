@@ -1,27 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
 import { LIKE_THOUGHT } from '../../utils/mutations';
-import { QUERY_THOUGHTS } from '../../utils/queries';
 
-const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true }) => {
+const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
   const [thoughtsState, setThoughtsState] = useState(thoughts); // Track local state
   const [likeThought] = useMutation(LIKE_THOUGHT);
+
+  // Update the local state when the thoughts prop changes
+  useEffect(() => {
+    setThoughtsState(thoughts);
+  }, [thoughts]);
 
   const handleLike = async (thoughtId) => {
     try {
       const response = await likeThought({
         variables: { thoughtId },
       });
-      // Find and update the thought with the new likes count in local state
+      const updatedThought = response.data.likeThought;
+
+      // Update the thought in local state with new like data
       setThoughtsState((prevThoughts) =>
         prevThoughts.map((thought) =>
-          thought._id === thoughtId ? { ...thought, likes: response.data.likeThought.likes } : thought
+          thought._id === thoughtId ? { ...thought, likes: updatedThought.likes } : thought
         )
       );
     } catch (err) {
       console.error('Error liking thought:', err);
     }
+  };
+
+  const hasLiked = (thought) => {
+    // Ensure likes exist and check if the user has liked this thought
+    return thought.likes?.some((like) => like._id === userId);
   };
 
   if (!thoughtsState.length) {
@@ -57,10 +68,10 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true })
             Join the discussion on this thought.
           </Link>
           <button
-            className="btn btn-secondary mt-2"
+            className={`btn ${hasLiked(thought) ? 'btn-danger' : 'btn-secondary'} mt-2`}
             onClick={() => handleLike(thought._id)}
           >
-            Like ({thought.likes?.length || 0}) {/* Display updated likes */}
+            {hasLiked(thought) ? 'Unlike' : 'Like'} ({thought.likes?.length || 0})
           </button>
         </div>
       ))}

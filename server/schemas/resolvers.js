@@ -29,11 +29,11 @@ const resolvers = {
       if (context.user) {
         const thought = await Thought.findOne({ _id: thoughtId });
     
-        // Check if the user already liked the thought
+        // Check if the user has already liked the thought
         const liked = thought.likes.includes(context.user._id);
     
         if (liked) {
-          // If the user has already liked the thought, remove the like (unlike)
+          // If the user has already liked the thought, remove the like
           return Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
@@ -48,7 +48,7 @@ const resolvers = {
           );
         }
       }
-      throw AuthenticationError;
+      throw new AuthenticationError('You need to be logged in.');
     },
     addUser: async (parent, { username, email, password }) => {
       const user = await User.create({ username, email, password });
