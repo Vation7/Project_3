@@ -22,6 +22,10 @@ export const QUERY_THOUGHTS = gql`
       thoughtText
       thoughtAuthor
       createdAt
+      likes {
+        _id
+        username
+      }
     }
   }
 `;
@@ -33,6 +37,10 @@ export const QUERY_SINGLE_THOUGHT = gql`
       thoughtText
       thoughtAuthor
       createdAt
+      likes {
+        _id
+        username
+      }
       comments {
         _id
         commentText
@@ -54,6 +62,10 @@ export const QUERY_ME = gql`
         thoughtText
         thoughtAuthor
         createdAt
+        likes {
+          _id
+          username
+        }
       }
     }
   }
