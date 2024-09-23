@@ -28,6 +28,7 @@ const Profile = () => {
 
   const user = data?.me || data?.user || {};
 
+  // If the logged-in user is viewing their own profile, navigate to /me
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
   }
