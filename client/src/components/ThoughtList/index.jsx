@@ -10,20 +10,29 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, u
   const [likeThought] = useMutation(LIKE_THOUGHT, {
     refetchQueries: [{ query: QUERY_THOUGHTS }],
     onCompleted: (data) => {
-      console.log("Like Mutation Completed, updated thought:", data.likeThought);
+      console.log('Like Mutation Completed, updated thought:', data.likeThought);
+
+      // Update the local state when the mutation is successful
+      const updatedThought = data.likeThought;
+      setThoughtsState((prevThoughts) =>
+        prevThoughts.map((thought) =>
+          thought._id === updatedThought._id ? { ...thought, likes: updatedThought.likes } : thought
+        )
+      );
     },
     onError: (err) => {
-      console.error("Error in Like Mutation: ", err);
+      console.error('Error in Like Mutation: ', err);
     },
   });
 
+  // Sync the local state with incoming thoughts prop
   useEffect(() => {
     setThoughtsState(thoughts);
   }, [thoughts]);
 
   const handleLike = async (thoughtId) => {
     try {
-      console.log("Liking thought:", thoughtId);
+      console.log('Liking thought:', thoughtId);
       await likeThought({
         variables: { thoughtId },
       });
