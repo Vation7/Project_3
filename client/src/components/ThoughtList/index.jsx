@@ -7,15 +7,19 @@ import { QUERY_THOUGHTS } from '../../utils/queries';
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
   const [thoughtsState, setThoughtsState] = useState(thoughts);
 
-  // Use likeThought mutation and refetch QUERY_THOUGHTS after mutation
+  // Use likeThought mutation and refetch QUERY_THOUGHTS after mutation to update the UI
   const [likeThought] = useMutation(LIKE_THOUGHT, {
-    refetchQueries: [{ query: QUERY_THOUGHTS }],
+    refetchQueries: [{ query: QUERY_THOUGHTS }], // Ensure it refetches the thoughts data after mutation
     awaitRefetchQueries: true,
     onCompleted: (data) => {
-      console.log("Like Mutation Response: ", data);
+      console.log("Like Mutation Completed: ", data);  // Log mutation response
+    },
+    onError: (err) => {
+      console.error("Error in Like Mutation: ", err);
     },
   });
 
+  // Update the local state when the thoughts prop changes
   useEffect(() => {
     setThoughtsState(thoughts);
   }, [thoughts]);

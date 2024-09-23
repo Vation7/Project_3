@@ -10,6 +10,7 @@ import Auth from '../utils/auth';
 const Profile = () => {
   const { username: userParam } = useParams();
   const [addFriend] = useMutation(ADD_FRIEND, {
+    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }], // Refetch data to update UI
     onCompleted: (data) => {
       console.log("Add Friend Response:", data);
     },
@@ -17,8 +18,9 @@ const Profile = () => {
       console.error("Error adding friend:", err);
     }
   });
-  
+
   const [removeFriend] = useMutation(REMOVE_FRIEND, {
+    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }], // Refetch data to update UI
     onCompleted: (data) => {
       console.log("Remove Friend Response:", data);
     },
