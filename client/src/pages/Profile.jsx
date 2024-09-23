@@ -4,38 +4,50 @@ import { useQuery, useMutation } from '@apollo/client';
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
-import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations'; // Import REMOVE_FRIEND
-import Auth from '../utils/auth';
+import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations';
+import Auth from '../utils.auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
-  const [addFriend] = useMutation(ADD_FRIEND, {
-    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }], // Refetch data to update UI
-    onCompleted: (data) => {
-      console.log("Add Friend Response:", data);
-    },
-    onError: (err) => {
-      console.error("Error adding friend:", err);
-    }
-  });
-
-  const [removeFriend] = useMutation(REMOVE_FRIEND, {
-    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }], // Refetch data to update UI
-    onCompleted: (data) => {
-      console.log("Remove Friend Response:", data);
-    },
-    onError: (err) => {
-      console.error("Error removing friend:", err);
-    }
-  });
-
   const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
+  const [addFriend] = useMutation(ADD_FRIEND, {
+    update(cache, { data: { addFriend } }) {
+      const { me } = cache.readQuery({ query: QUERY_ME });
+
+      cache.writeQuery({
+        query: QUERY_ME,
+        data: { me: { ...me, friends: [...me.friends, addFriend] } },
+      });
+    },
+    onCompleted: (data) => {
+      console.log('Friend added:', data);
+    },
+  });
+
+  const [removeFriend] = useMutation(REMOVE_FRIEND, {
+    update(cache, { data: { removeFriend } }) {
+      const { me } = cache.readQuery({ query: QUERY_ME });
+
+      cache.writeQuery({
+        query: QUERY_ME,
+        data: {
+          me: {
+            ...me,
+            friends: me.friends.filter((friend) => friend._id !== removeFriend._id),
+          },
+        },
+      });
+    },
+    onCompleted: (data) => {
+      console.log('Friend removed:', data);
+    },
+  });
+
   const user = data?.me || data?.user || {};
 
-  // Navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
   }
@@ -47,8 +59,7 @@ const Profile = () => {
   if (!user?.username) {
     return (
       <h4>
-        You need to be logged in to see this. Use the navigation links above to
-        sign up or log in!
+        You need to be logged in to see this. Use the navigation links above to sign up or log in!
       </h4>
     );
   }

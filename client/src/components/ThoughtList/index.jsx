@@ -7,10 +7,22 @@ import { QUERY_THOUGHTS } from '../../utils/queries';
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
   const [thoughtsState, setThoughtsState] = useState(thoughts);
 
-  // Use likeThought mutation and refetch QUERY_THOUGHTS after mutation to update the UI
+  // Use likeThought mutation with cache update after mutation
   const [likeThought] = useMutation(LIKE_THOUGHT, {
-    refetchQueries: [{ query: QUERY_THOUGHTS }], // Ensure it refetches the thoughts data after mutation
-    awaitRefetchQueries: true,
+    update(cache, { data: { likeThought } }) {
+      const existingThoughts = cache.readQuery({ query: QUERY_THOUGHTS });
+
+      // Find the thought that was liked or unliked and update it
+      const updatedThoughts = existingThoughts.thoughts.map((thought) =>
+        thought._id === likeThought._id ? { ...thought, likes: likeThought.likes } : thought
+      );
+
+      // Write the updated thoughts back to the cache
+      cache.writeQuery({
+        query: QUERY_THOUGHTS,
+        data: { thoughts: updatedThoughts },
+      });
+    },
     onCompleted: (data) => {
       console.log("Like Mutation Completed: ", data);  // Log mutation response
     },
@@ -19,7 +31,6 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, u
     },
   });
 
-  // Update the local state when the thoughts prop changes
   useEffect(() => {
     setThoughtsState(thoughts);
   }, [thoughts]);
