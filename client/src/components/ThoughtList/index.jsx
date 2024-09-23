@@ -2,10 +2,33 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
 import { LIKE_THOUGHT } from '../../utils/mutations';
+import { QUERY_THOUGHTS } from '../../utils/queries';
 
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
   const [thoughtsState, setThoughtsState] = useState(thoughts); // Track local state
-  const [likeThought] = useMutation(LIKE_THOUGHT);
+
+  const [likeThought] = useMutation(LIKE_THOUGHT, {
+    update(cache, { data: { likeThought } }) {
+      try {
+        // Read the current cache
+        const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
+        
+        // Write the updated thoughts back to the cache
+        cache.writeQuery({
+          query: QUERY_THOUGHTS,
+          data: {
+            thoughts: thoughts.map((thought) =>
+              thought._id === likeThought._id
+                ? { ...thought, likes: likeThought.likes } // Update the likes in cache
+                : thought
+            ),
+          },
+        });
+      } catch (e) {
+        console.error('Error updating cache for likeThought:', e);
+      }
+    },
+  });
 
   // Update the local state when the thoughts prop changes
   useEffect(() => {
