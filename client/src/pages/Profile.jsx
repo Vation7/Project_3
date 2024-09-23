@@ -12,13 +12,13 @@ const Profile = () => {
   const [addFriend] = useMutation(ADD_FRIEND);
   const [removeFriend] = useMutation(REMOVE_FRIEND);
 
-  // Fetch the user data and provide a refetch function to update the data after a mutation
-  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+  // Fetch user data
+  const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
   const user = data?.me || data?.user || {};
-  
+
   // Navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
@@ -31,32 +31,53 @@ const Profile = () => {
   if (!user?.username) {
     return (
       <h4>
-        You need to be logged in to see this. Use the navigation links above to
-        sign up or log in!
+        You need to be logged in to see this. Use the navigation links above to sign up or log in!
       </h4>
     );
   }
 
-  // Function to handle adding a friend and refetch the data afterward
+  // Function to handle adding a friend with cache update
   const handleAddFriend = async () => {
     try {
       await addFriend({
         variables: { friendId: user._id },
+        update: (cache, { data: { addFriend } }) => {
+          const { me } = cache.readQuery({ query: QUERY_ME });
+          cache.writeQuery({
+            query: QUERY_ME,
+            data: {
+              me: {
+                ...me,
+                friends: [...me.friends, addFriend], // Add new friend to local cache
+              },
+            },
+          });
+        },
       });
-      await refetch(); // Refetch the user data after adding a friend
       console.log('Friend added!');
     } catch (err) {
       console.error('Error adding friend:', err);
     }
   };
 
-  // Function to handle removing a friend and refetch the data afterward
+  // Function to handle removing a friend with cache update
   const handleRemoveFriend = async () => {
     try {
       await removeFriend({
         variables: { friendId: user._id },
+        update: (cache, { data: { removeFriend } }) => {
+          const { me } = cache.readQuery({ query: QUERY_ME });
+          cache.writeQuery({
+            query: QUERY_ME,
+            data: {
+              me: {
+                ...me,
+                friends: me.friends.filter((friend) => friend._id !== removeFriend._id), // Remove friend from local cache
+              },
+            },
+          });
+        },
       });
-      await refetch(); // Refetch the user data after removing a friend
       console.log('Friend removed!');
     } catch (err) {
       console.error('Error removing friend:', err);
