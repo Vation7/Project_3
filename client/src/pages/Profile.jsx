@@ -15,6 +15,7 @@ const Profile = () => {
   // Fetch user data
   const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
+    fetchPolicy: 'network-only', // Ensure fresh data is fetched from the server
   });
 
   const user = data?.me || data?.user || {};
@@ -37,7 +38,7 @@ const Profile = () => {
     );
   }
 
-  // Function to handle adding a friend with cache update
+  // Function to handle adding a friend
   const handleAddFriend = async () => {
     try {
       await addFriend({
@@ -55,14 +56,13 @@ const Profile = () => {
           });
         },
       });
-      await refetch(); // Refetch after adding a friend
-      console.log('Friend added!');
+      await refetch(); // Refetch after adding a friend to update UI
     } catch (err) {
       console.error('Error adding friend:', err);
     }
   };
 
-  // Function to handle removing a friend with cache update
+  // Function to handle removing a friend
   const handleRemoveFriend = async () => {
     try {
       await removeFriend({
@@ -80,8 +80,7 @@ const Profile = () => {
           });
         },
       });
-      await refetch(); // Refetch after removing a friend
-      console.log('Friend removed!');
+      await refetch(); // Refetch after removing a friend to update UI
     } catch (err) {
       console.error('Error removing friend:', err);
     }
