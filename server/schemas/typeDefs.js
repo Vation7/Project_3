@@ -46,6 +46,7 @@ const typeDefs = `
     removeComment(thoughtId: ID!, commentId: ID!): Thought
     likeThought(thoughtId: ID!): Thought
     addFriend(friendId: ID!): User # New mutation to add a friend
+    removeFriend(friendId: ID!): User # New mutation to remove a friend
   }
 `;
 

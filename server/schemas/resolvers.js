@@ -153,6 +153,17 @@ const resolvers = {
       }
       throw new AuthenticationError('You need to be logged in to remove a comment.');
     },
+
+    removeFriend: async (parent, { friendId }, context) => {
+      if (context.user) {
+        return User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { friends: friendId } }, // Remove the friend
+          { new: true }
+        ).populate('friends');
+      }
+      throw new AuthenticationError('You need to be logged in to remove a friend.');
+    },
   },
 };
 
