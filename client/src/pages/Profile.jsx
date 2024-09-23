@@ -10,26 +10,23 @@ const Profile = () => {
   const { username: userParam } = useParams();
   const loggedInUserId = Auth.getProfile().data._id;
 
+  // Add Friend Mutation
   const [addFriend] = useMutation(ADD_FRIEND, {
-    onCompleted: () => refetch(),
+    refetchQueries: [{ query: userParam ? QUERY_USER : QUERY_ME, variables: { username: userParam } }],
   });
+
+  // Remove Friend Mutation
   const [removeFriend] = useMutation(REMOVE_FRIEND, {
-    onCompleted: () => refetch(),
+    refetchQueries: [{ query: userParam ? QUERY_USER : QUERY_ME, variables: { username: userParam } }],
   });
 
-  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+  // Query for User or Me
+  const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'network-only', // Always fetch fresh data from the server
   });
-
-  // Log the fetched user data for debugging
-  console.log("Profile page data:", data);
 
   const user = data?.me || data?.user || {};
-
-  // Log the user object to debug
-  console.log("Current user:", user);
-  console.log("Friends:", user?.friends);
 
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
@@ -49,7 +46,6 @@ const Profile = () => {
 
   const handleAddFriend = async () => {
     try {
-      console.log("Adding friend:", user._id);
       await addFriend({
         variables: { friendId: user._id },
       });
@@ -60,7 +56,6 @@ const Profile = () => {
 
   const handleRemoveFriend = async () => {
     try {
-      console.log("Removing friend:", user._id);
       await removeFriend({
         variables: { friendId: user._id },
       });
@@ -69,9 +64,8 @@ const Profile = () => {
     }
   };
 
-  // Check if the logged-in user is a friend
+  // Check if the logged-in user is already a friend
   const isFriend = user.friends?.some((friend) => friend._id === loggedInUserId);
-  console.log("Is friend:", isFriend);
 
   return (
     <div>
