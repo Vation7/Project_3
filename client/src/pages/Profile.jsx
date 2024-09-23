@@ -1,64 +1,39 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
+
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
-import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations';
+import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations'; // Import REMOVE_FRIEND
 import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
-  const loggedInUserId = Auth.getProfile().data._id;
+  const [addFriend] = useMutation(ADD_FRIEND, {
+    onCompleted: (data) => {
+      console.log("Add Friend Response:", data);
+    },
+    onError: (err) => {
+      console.error("Error adding friend:", err);
+    }
+  });
+  
+  const [removeFriend] = useMutation(REMOVE_FRIEND, {
+    onCompleted: (data) => {
+      console.log("Remove Friend Response:", data);
+    },
+    onError: (err) => {
+      console.error("Error removing friend:", err);
+    }
+  });
 
-  // Query for User or Me
   const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
-    fetchPolicy: 'network-only', // Always fetch fresh data from the server
   });
 
   const user = data?.me || data?.user || {};
 
-  // Add Friend Mutation
-  const [addFriend] = useMutation(ADD_FRIEND, {
-    update(cache, { data: { addFriend } }) {
-      try {
-        const { me } = cache.readQuery({ query: QUERY_ME });
-        cache.writeQuery({
-          query: QUERY_ME,
-          data: {
-            me: {
-              ...me,
-              friends: [...me.friends, addFriend], // Add friend to cache
-            },
-          },
-        });
-      } catch (e) {
-        console.error('Error updating cache for addFriend:', e);
-      }
-    },
-  });
-
-  // Remove Friend Mutation
-  const [removeFriend] = useMutation(REMOVE_FRIEND, {
-    update(cache, { data: { removeFriend } }) {
-      try {
-        const { me } = cache.readQuery({ query: QUERY_ME });
-        cache.writeQuery({
-          query: QUERY_ME,
-          data: {
-            me: {
-              ...me,
-              friends: me.friends.filter((friend) => friend._id !== removeFriend._id), // Remove friend from cache
-            },
-          },
-        });
-      } catch (e) {
-        console.error('Error updating cache for removeFriend:', e);
-      }
-    },
-  });
-
-  // If the logged-in user is viewing their own profile, navigate to /me
+  // Navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
   }
@@ -70,7 +45,8 @@ const Profile = () => {
   if (!user?.username) {
     return (
       <h4>
-        You need to be logged in to see this. Use the navigation links above to sign up or log in!
+        You need to be logged in to see this. Use the navigation links above to
+        sign up or log in!
       </h4>
     );
   }
@@ -95,8 +71,7 @@ const Profile = () => {
     }
   };
 
-  // Check if the logged-in user is already a friend
-  const isFriend = user.friends?.some((friend) => friend._id === loggedInUserId);
+  const isFriend = user.friends?.some((friend) => friend._id === Auth.getProfile().data._id);
 
   return (
     <div>
@@ -109,7 +84,7 @@ const Profile = () => {
           <div className="col-12 col-md-10 mb-5">
             {isFriend ? (
               <button className="btn btn-danger" onClick={handleRemoveFriend}>
-                Unfriend
+                Remove Friend
               </button>
             ) : (
               <button className="btn btn-primary" onClick={handleAddFriend}>
@@ -128,7 +103,10 @@ const Profile = () => {
           />
         </div>
         {!userParam && (
-          <div className="col-12 col-md-10 mb-3 p-3" style={{ border: '1px dotted #1a1a1a' }}>
+          <div
+            className="col-12 col-md-10 mb-3 p-3"
+            style={{ border: '1px dotted #1a1a1a' }}
+          >
             <ThoughtForm />
           </div>
         )}
@@ -137,11 +115,9 @@ const Profile = () => {
       <div className="col-12 col-md-10">
         <h3>Friends List</h3>
         <ul>
-          {user.friends
-            ?.filter((friend) => friend._id !== loggedInUserId)
-            .map((friend) => (
-              <li key={friend._id}>{friend.username}</li>
-            ))}
+          {user.friends?.map((friend) => (
+            <li key={friend._id}>{friend.username}</li>
+          ))}
         </ul>
       </div>
     </div>
