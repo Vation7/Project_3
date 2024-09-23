@@ -33,7 +33,12 @@ const Profile = () => {
         const { me } = cache.readQuery({ query: QUERY_ME });
         cache.writeQuery({
           query: QUERY_ME,
-          data: { me: { ...me, friends: me.friends.filter((friend) => friend._id !== removeFriend._id) } },
+          data: {
+            me: {
+              ...me,
+              friends: me.friends.filter((friend) => friend._id !== removeFriend._id),
+            },
+          },
         });
       } catch (e) {
         console.error('Error updating cache after removing friend', e);
