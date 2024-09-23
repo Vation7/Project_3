@@ -5,7 +5,7 @@ import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
 import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations';
-import Auth from '../utils.auth';
+import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
