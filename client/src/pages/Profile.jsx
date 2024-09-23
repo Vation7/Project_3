@@ -10,16 +10,6 @@ const Profile = () => {
   const { username: userParam } = useParams();
   const loggedInUserId = Auth.getProfile().data._id;
 
-  // Add Friend Mutation
-  const [addFriend] = useMutation(ADD_FRIEND, {
-    refetchQueries: [{ query: userParam ? QUERY_USER : QUERY_ME, variables: { username: userParam } }],
-  });
-
-  // Remove Friend Mutation
-  const [removeFriend] = useMutation(REMOVE_FRIEND, {
-    refetchQueries: [{ query: userParam ? QUERY_USER : QUERY_ME, variables: { username: userParam } }],
-  });
-
   // Query for User or Me
   const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
@@ -27,6 +17,46 @@ const Profile = () => {
   });
 
   const user = data?.me || data?.user || {};
+
+  // Add Friend Mutation
+  const [addFriend] = useMutation(ADD_FRIEND, {
+    update(cache, { data: { addFriend } }) {
+      try {
+        const { me } = cache.readQuery({ query: QUERY_ME });
+        cache.writeQuery({
+          query: QUERY_ME,
+          data: {
+            me: {
+              ...me,
+              friends: [...me.friends, addFriend], // Add friend to cache
+            },
+          },
+        });
+      } catch (e) {
+        console.error('Error updating cache for addFriend:', e);
+      }
+    },
+  });
+
+  // Remove Friend Mutation
+  const [removeFriend] = useMutation(REMOVE_FRIEND, {
+    update(cache, { data: { removeFriend } }) {
+      try {
+        const { me } = cache.readQuery({ query: QUERY_ME });
+        cache.writeQuery({
+          query: QUERY_ME,
+          data: {
+            me: {
+              ...me,
+              friends: me.friends.filter((friend) => friend._id !== removeFriend._id), // Remove friend from cache
+            },
+          },
+        });
+      } catch (e) {
+        console.error('Error updating cache for removeFriend:', e);
+      }
+    },
+  });
 
   // If the logged-in user is viewing their own profile, navigate to /me
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
