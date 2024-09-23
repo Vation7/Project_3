@@ -15,34 +15,29 @@ const Profile = () => {
 
   const [addFriend] = useMutation(ADD_FRIEND, {
     update(cache, { data: { addFriend } }) {
-      const { me } = cache.readQuery({ query: QUERY_ME });
-
-      cache.writeQuery({
-        query: QUERY_ME,
-        data: { me: { ...me, friends: [...me.friends, addFriend] } },
-      });
-    },
-    onCompleted: (data) => {
-      console.log('Friend added:', data);
+      try {
+        const { me } = cache.readQuery({ query: QUERY_ME });
+        cache.writeQuery({
+          query: QUERY_ME,
+          data: { me: { ...me, friends: [...me.friends, addFriend] } },
+        });
+      } catch (e) {
+        console.error('Error updating cache after adding friend', e);
+      }
     },
   });
 
   const [removeFriend] = useMutation(REMOVE_FRIEND, {
     update(cache, { data: { removeFriend } }) {
-      const { me } = cache.readQuery({ query: QUERY_ME });
-
-      cache.writeQuery({
-        query: QUERY_ME,
-        data: {
-          me: {
-            ...me,
-            friends: me.friends.filter((friend) => friend._id !== removeFriend._id),
-          },
-        },
-      });
-    },
-    onCompleted: (data) => {
-      console.log('Friend removed:', data);
+      try {
+        const { me } = cache.readQuery({ query: QUERY_ME });
+        cache.writeQuery({
+          query: QUERY_ME,
+          data: { me: { ...me, friends: me.friends.filter((friend) => friend._id !== removeFriend._id) } },
+        });
+      } catch (e) {
+        console.error('Error updating cache after removing friend', e);
+      }
     },
   });
 
@@ -84,7 +79,7 @@ const Profile = () => {
     }
   };
 
-  const isFriend = user.friends?.some((friend) => friend._id === Auth.getProfile().data._id);
+  const isFriend = data?.me?.friends?.some((friend) => friend._id === user._id);
 
   return (
     <div>

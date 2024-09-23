@@ -7,24 +7,25 @@ import { QUERY_THOUGHTS } from '../../utils/queries';
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
   const [thoughtsState, setThoughtsState] = useState(thoughts);
 
-  // Use likeThought mutation with cache update after mutation
   const [likeThought] = useMutation(LIKE_THOUGHT, {
     update(cache, { data: { likeThought } }) {
-      const existingThoughts = cache.readQuery({ query: QUERY_THOUGHTS });
+      try {
+        // Read current cache
+        const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
 
-      // Find the thought that was liked or unliked and update it
-      const updatedThoughts = existingThoughts.thoughts.map((thought) =>
-        thought._id === likeThought._id ? { ...thought, likes: likeThought.likes } : thought
-      );
+        // Find the thought and update its likes
+        const updatedThoughts = thoughts.map((thought) =>
+          thought._id === likeThought._id ? { ...thought, likes: likeThought.likes } : thought
+        );
 
-      // Write the updated thoughts back to the cache
-      cache.writeQuery({
-        query: QUERY_THOUGHTS,
-        data: { thoughts: updatedThoughts },
-      });
-    },
-    onCompleted: (data) => {
-      console.log("Like Mutation Completed: ", data);  // Log mutation response
+        // Write the updated thoughts back to the cache
+        cache.writeQuery({
+          query: QUERY_THOUGHTS,
+          data: { thoughts: updatedThoughts },
+        });
+      } catch (e) {
+        console.error('Error updating cache after liking/unliking', e);
+      }
     },
     onError: (err) => {
       console.error("Error in Like Mutation: ", err);
