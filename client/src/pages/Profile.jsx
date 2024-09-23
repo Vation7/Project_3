@@ -18,6 +18,7 @@ const Profile = () => {
   });
 
   const user = data?.me || data?.user || {};
+  const loggedInUserId = Auth.getProfile().data._id; // Logged-in user's ID
 
   // Navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
@@ -85,7 +86,7 @@ const Profile = () => {
   };
 
   // Check if the logged-in user is a friend
-  const isFriend = user.friends?.some((friend) => friend._id === Auth.getProfile().data._id);
+  const isFriend = user.friends?.some((friend) => friend._id === loggedInUserId);
 
   return (
     <div>
@@ -129,9 +130,11 @@ const Profile = () => {
       <div className="col-12 col-md-10">
         <h3>Friends List</h3>
         <ul>
-          {user.friends?.map((friend) => (
-            <li key={friend._id}>{friend.username}</li>
-          ))}
+          {user.friends
+            ?.filter((friend) => friend._id !== loggedInUserId) // Exclude logged-in user from friends list
+            .map((friend) => (
+              <li key={friend._id}>{friend.username}</li>
+            ))}
         </ul>
       </div>
     </div>
