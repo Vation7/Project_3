@@ -38,6 +38,10 @@ const resolvers = {
             { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
             { new: true }
           ).populate('likes'); // Ensure 'likes' is populated with full user data
+
+          // Log the updated thought's likes
+          console.log("Updated Likes (unlike): ", updatedThought.likes);
+
           return updatedThought;
         } else {
           const updatedThought = await Thought.findOneAndUpdate(
@@ -45,6 +49,10 @@ const resolvers = {
             { $addToSet: { likes: context.user._id } }, // Add the user's ID to the likes array
             { new: true }
           ).populate('likes'); // Ensure 'likes' is populated with full user data
+
+          // Log the updated thought's likes
+          console.log("Updated Likes (like): ", updatedThought.likes);
+
           return updatedThought;
         }
       }

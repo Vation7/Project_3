@@ -5,56 +5,32 @@ import { LIKE_THOUGHT } from '../../utils/mutations';
 import { QUERY_THOUGHTS } from '../../utils/queries';
 
 const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, userId }) => {
-  const [thoughtsState, setThoughtsState] = useState(thoughts); // Track local state
+  const [thoughtsState, setThoughtsState] = useState(thoughts);
 
+  // Use likeThought mutation and refetch QUERY_THOUGHTS after mutation
   const [likeThought] = useMutation(LIKE_THOUGHT, {
-    update(cache, { data: { likeThought } }) {
-      try {
-        // Read the current cache
-        const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
-        
-        // Write the updated thoughts back to the cache
-        cache.writeQuery({
-          query: QUERY_THOUGHTS,
-          data: {
-            thoughts: thoughts.map((thought) =>
-              thought._id === likeThought._id
-                ? { ...thought, likes: likeThought.likes } // Update the likes in cache
-                : thought
-            ),
-          },
-        });
-      } catch (e) {
-        console.error('Error updating cache for likeThought:', e);
-      }
+    refetchQueries: [{ query: QUERY_THOUGHTS }],
+    awaitRefetchQueries: true,
+    onCompleted: (data) => {
+      console.log("Like Mutation Response: ", data);
     },
   });
 
-  // Update the local state when the thoughts prop changes
   useEffect(() => {
     setThoughtsState(thoughts);
   }, [thoughts]);
 
   const handleLike = async (thoughtId) => {
     try {
-      const response = await likeThought({
+      await likeThought({
         variables: { thoughtId },
       });
-      const updatedThought = response.data.likeThought;
-
-      // Update the thought in local state with new like/unlike data
-      setThoughtsState((prevThoughts) =>
-        prevThoughts.map((thought) =>
-          thought._id === thoughtId ? { ...thought, likes: updatedThought.likes } : thought
-        )
-      );
     } catch (err) {
       console.error('Error liking thought:', err);
     }
   };
 
   const hasLiked = (thought) => {
-    // Ensure likes exist and check if the user has liked this thought
     return thought.likes?.some((like) => like._id === userId);
   };
 
