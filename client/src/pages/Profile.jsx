@@ -1,6 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
@@ -9,44 +8,34 @@ import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
-  const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
   const [addFriend] = useMutation(ADD_FRIEND, {
-    update(cache, { data: { addFriend } }) {
-      try {
-        const { me } = cache.readQuery({ query: QUERY_ME });
-        cache.writeQuery({
-          query: QUERY_ME,
-          data: { me: { ...me, friends: [...me.friends, addFriend] } },
-        });
-      } catch (e) {
-        console.error('Error updating cache after adding friend', e);
-      }
+    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }],
+    onCompleted: (data) => {
+      console.log("Friend added successfully:", data.addFriend);
+      refetch();
+    },
+    onError: (err) => {
+      console.error("Error adding friend:", err);
     },
   });
 
   const [removeFriend] = useMutation(REMOVE_FRIEND, {
-    update(cache, { data: { removeFriend } }) {
-      try {
-        const { me } = cache.readQuery({ query: QUERY_ME });
-        cache.writeQuery({
-          query: QUERY_ME,
-          data: {
-            me: {
-              ...me,
-              friends: me.friends.filter((friend) => friend._id !== removeFriend._id),
-            },
-          },
-        });
-      } catch (e) {
-        console.error('Error updating cache after removing friend', e);
-      }
+    refetchQueries: [{ query: QUERY_ME }, { query: QUERY_USER, variables: { username: userParam } }],
+    onCompleted: (data) => {
+      console.log("Friend removed successfully:", data.removeFriend);
+      refetch();
+    },
+    onError: (err) => {
+      console.error("Error removing friend:", err);
     },
   });
 
   const user = data?.me || data?.user || {};
+  console.log('Current user data:', user); // Debugging the user object
 
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
@@ -66,6 +55,7 @@ const Profile = () => {
 
   const handleAddFriend = async () => {
     try {
+      console.log("Adding friend:", user._id);
       await addFriend({
         variables: { friendId: user._id },
       });
@@ -76,6 +66,7 @@ const Profile = () => {
 
   const handleRemoveFriend = async () => {
     try {
+      console.log("Removing friend:", user._id);
       await removeFriend({
         variables: { friendId: user._id },
       });
@@ -85,6 +76,7 @@ const Profile = () => {
   };
 
   const isFriend = data?.me?.friends?.some((friend) => friend._id === user._id);
+  console.log("Is friend:", isFriend); // Debugging if the friend status is correct
 
   return (
     <div>

@@ -8,27 +8,9 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, u
   const [thoughtsState, setThoughtsState] = useState(thoughts);
 
   const [likeThought] = useMutation(LIKE_THOUGHT, {
-    update(cache, { data: { likeThought } }) {
-      try {
-        // Update the cache for QUERY_THOUGHTS
-        const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
-
-        // Update the specific thought's likes count
-        const updatedThoughts = thoughts.map((thought) =>
-          thought._id === likeThought._id ? { ...thought, likes: likeThought.likes } : thought
-        );
-
-        // Write the updated thoughts back to the cache
-        cache.writeQuery({
-          query: QUERY_THOUGHTS,
-          data: { thoughts: updatedThoughts },
-        });
-      } catch (error) {
-        console.error('Error updating the cache for likes:', error);
-      }
-    },
+    refetchQueries: [{ query: QUERY_THOUGHTS }],
     onCompleted: (data) => {
-      console.log("Like Mutation Completed: ", data);  // Log mutation response
+      console.log("Like Mutation Completed, updated thought:", data.likeThought);
     },
     onError: (err) => {
       console.error("Error in Like Mutation: ", err);
@@ -41,6 +23,7 @@ const ThoughtList = ({ thoughts, title, showTitle = true, showUsername = true, u
 
   const handleLike = async (thoughtId) => {
     try {
+      console.log("Liking thought:", thoughtId);
       await likeThought({
         variables: { thoughtId },
       });
