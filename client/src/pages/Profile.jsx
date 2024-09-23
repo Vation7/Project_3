@@ -1,6 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
@@ -9,19 +8,29 @@ import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
-  const [addFriend] = useMutation(ADD_FRIEND);
-  const [removeFriend] = useMutation(REMOVE_FRIEND);
+  const loggedInUserId = Auth.getProfile().data._id;
 
-  // Fetch user data
-  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
-    variables: { username: userParam },
-    fetchPolicy: 'network-only', // Ensure fresh data is fetched from the server
+  const [addFriend] = useMutation(ADD_FRIEND, {
+    onCompleted: () => refetch(),
+  });
+  const [removeFriend] = useMutation(REMOVE_FRIEND, {
+    onCompleted: () => refetch(),
   });
 
-  const user = data?.me || data?.user || {};
-  const loggedInUserId = Auth.getProfile().data._id; // Logged-in user's ID
+  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+    variables: { username: userParam },
+    fetchPolicy: 'network-only',
+  });
 
-  // Navigate to personal profile page if username is yours
+  // Log the fetched user data for debugging
+  console.log("Profile page data:", data);
+
+  const user = data?.me || data?.user || {};
+
+  // Log the user object to debug
+  console.log("Current user:", user);
+  console.log("Friends:", user?.friends);
+
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
   }
@@ -38,49 +47,23 @@ const Profile = () => {
     );
   }
 
-  // Function to handle adding a friend
   const handleAddFriend = async () => {
     try {
+      console.log("Adding friend:", user._id);
       await addFriend({
         variables: { friendId: user._id },
-        update: (cache, { data: { addFriend } }) => {
-          const { me } = cache.readQuery({ query: QUERY_ME });
-          cache.writeQuery({
-            query: QUERY_ME,
-            data: {
-              me: {
-                ...me,
-                friends: [...me.friends, addFriend], // Add new friend to local cache
-              },
-            },
-          });
-        },
       });
-      await refetch(); // Refetch after adding a friend to update UI
     } catch (err) {
       console.error('Error adding friend:', err);
     }
   };
 
-  // Function to handle removing a friend
   const handleRemoveFriend = async () => {
     try {
+      console.log("Removing friend:", user._id);
       await removeFriend({
         variables: { friendId: user._id },
-        update: (cache, { data: { removeFriend } }) => {
-          const { me } = cache.readQuery({ query: QUERY_ME });
-          cache.writeQuery({
-            query: QUERY_ME,
-            data: {
-              me: {
-                ...me,
-                friends: me.friends.filter((friend) => friend._id !== removeFriend._id), // Remove friend from local cache
-              },
-            },
-          });
-        },
       });
-      await refetch(); // Refetch after removing a friend to update UI
     } catch (err) {
       console.error('Error removing friend:', err);
     }
@@ -88,6 +71,7 @@ const Profile = () => {
 
   // Check if the logged-in user is a friend
   const isFriend = user.friends?.some((friend) => friend._id === loggedInUserId);
+  console.log("Is friend:", isFriend);
 
   return (
     <div>
@@ -119,10 +103,7 @@ const Profile = () => {
           />
         </div>
         {!userParam && (
-          <div
-            className="col-12 col-md-10 mb-3 p-3"
-            style={{ border: '1px dotted #1a1a1a' }}
-          >
+          <div className="col-12 col-md-10 mb-3 p-3" style={{ border: '1px dotted #1a1a1a' }}>
             <ThoughtForm />
           </div>
         )}
@@ -132,7 +113,7 @@ const Profile = () => {
         <h3>Friends List</h3>
         <ul>
           {user.friends
-            ?.filter((friend) => friend._id !== loggedInUserId) // Exclude logged-in user from friends list
+            ?.filter((friend) => friend._id !== loggedInUserId)
             .map((friend) => (
               <li key={friend._id}>{friend.username}</li>
             ))}
