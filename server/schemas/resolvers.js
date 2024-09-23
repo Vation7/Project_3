@@ -11,10 +11,10 @@ const resolvers = {
     },
     thoughts: async (parent, { username }) => {
       const params = username ? { username } : {};
-      return Thought.find(params).sort({ createdAt: -1 });
+      return Thought.find(params).sort({ createdAt: -1 }).populate('likes'); // Ensure 'likes' is populated
     },
     thought: async (parent, { thoughtId }) => {
-      return Thought.findOne({ _id: thoughtId });
+      return Thought.findOne({ _id: thoughtId }).populate('likes'); // Ensure 'likes' is populated
     },
     me: async (parent, args, context) => {
       if (context.user) {
@@ -33,17 +33,19 @@ const resolvers = {
         const liked = thought.likes.includes(context.user._id);
 
         if (liked) {
-          return Thought.findOneAndUpdate(
+          const updatedThought = await Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $pull: { likes: context.user._id } }, // Remove the user's ID from the likes array
             { new: true }
-          );
+          ).populate('likes'); // Ensure 'likes' is populated with full user data
+          return updatedThought;
         } else {
-          return Thought.findOneAndUpdate(
+          const updatedThought = await Thought.findOneAndUpdate(
             { _id: thoughtId },
             { $addToSet: { likes: context.user._id } }, // Add the user's ID to the likes array
             { new: true }
-          );
+          ).populate('likes'); // Ensure 'likes' is populated with full user data
+          return updatedThought;
         }
       }
       throw new AuthenticationError('You need to be logged in.');
