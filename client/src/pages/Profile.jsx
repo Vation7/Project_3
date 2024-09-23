@@ -4,21 +4,22 @@ import { useQuery, useMutation } from '@apollo/client';
 import ThoughtForm from '../components/ThoughtForm';
 import ThoughtList from '../components/ThoughtList';
 import { QUERY_USER, QUERY_ME } from '../utils/queries';
-import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations'; // Import both mutations
+import { ADD_FRIEND, REMOVE_FRIEND } from '../utils/mutations';
 import Auth from '../utils/auth';
 
 const Profile = () => {
   const { username: userParam } = useParams();
   const [addFriend] = useMutation(ADD_FRIEND);
-  const [removeFriend] = useMutation(REMOVE_FRIEND); // Add removeFriend mutation
+  const [removeFriend] = useMutation(REMOVE_FRIEND);
 
-  const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+  // Fetch the user data and provide a refetch function to update the data after a mutation
+  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
   const user = data?.me || data?.user || {};
   
-  // navigate to personal profile page if username is yours
+  // Navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
     return <Navigate to="/me" />;
   }
@@ -36,30 +37,33 @@ const Profile = () => {
     );
   }
 
-  // Function to handle adding a friend
+  // Function to handle adding a friend and refetch the data afterward
   const handleAddFriend = async () => {
     try {
       await addFriend({
         variables: { friendId: user._id },
       });
+      await refetch(); // Refetch the user data after adding a friend
       console.log('Friend added!');
     } catch (err) {
       console.error('Error adding friend:', err);
     }
   };
 
-  // Function to handle removing a friend
+  // Function to handle removing a friend and refetch the data afterward
   const handleRemoveFriend = async () => {
     try {
       await removeFriend({
         variables: { friendId: user._id },
       });
+      await refetch(); // Refetch the user data after removing a friend
       console.log('Friend removed!');
     } catch (err) {
       console.error('Error removing friend:', err);
     }
   };
 
+  // Check if the logged-in user is a friend
   const isFriend = user.friends?.some((friend) => friend._id === Auth.getProfile().data._id);
 
   return (
