@@ -13,7 +13,7 @@ const Profile = () => {
   const [removeFriend] = useMutation(REMOVE_FRIEND);
 
   // Fetch user data
-  const { loading, data } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+  const { loading, data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
     variables: { username: userParam },
   });
 
@@ -55,6 +55,7 @@ const Profile = () => {
           });
         },
       });
+      await refetch(); // Refetch after adding a friend
       console.log('Friend added!');
     } catch (err) {
       console.error('Error adding friend:', err);
@@ -79,6 +80,7 @@ const Profile = () => {
           });
         },
       });
+      await refetch(); // Refetch after removing a friend
       console.log('Friend removed!');
     } catch (err) {
       console.error('Error removing friend:', err);
